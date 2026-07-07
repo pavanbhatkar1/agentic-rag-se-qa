@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from app.api.routes import router
 from app.core.config import settings
 from app.core.logging import logger, setup_logging
 from app.core.qdrant import client
@@ -22,6 +23,8 @@ app = FastAPI(
     description="Agentic RAG for Software Engineering Question Answering",
     lifespan=lifespan,
 )
+
+app.include_router(router)
 
 
 @app.get("/health", tags=["Health"])

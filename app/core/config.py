@@ -17,6 +17,7 @@ class Settings(BaseSettings):
 
     ollama_base_url: str = "http://localhost:11434"
     llm_model: str = "mistral"
+    ollama_model: str = "mistral:7b"
 
     embedding_model: str = "BAAI/bge-small-en-v1.5"
     rerank_model: str = "BAAI/bge-reranker-base"
