@@ -17,8 +17,14 @@ class GraphNodes:
         self.prompt_builder = PromptBuilder()
 
     def retrieve_node(self, state: GraphState) -> GraphState:
+        query = (
+            state["rewritten_query"]
+            if state["rewritten_query"]
+            else state["question"]
+        )
+
         documents = self.retriever.search(
-            query=state["question"],
+            query=query,
             top_k=5,
         )
 

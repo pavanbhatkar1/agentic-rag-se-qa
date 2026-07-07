@@ -1,6 +1,8 @@
 from app.core.config import settings
 from app.embeddings.embedder import Embedder
 from app.graph.nodes import GraphNodes
+from app.graph.query_rewriter import QueryRewriter
+from app.graph.retrieval_grader import RetrievalGrader
 from app.graph.router import QueryRouter
 from app.graph.workflow import GraphWorkflow
 from app.llm.ollama_client import OllamaClient
@@ -17,11 +19,17 @@ retriever = Retriever(db, embedder)
 llm = OllamaClient(model=settings.ollama_model)
 
 nodes = GraphNodes(retriever, llm)
-router = QueryRouter(llm)          # <-- Add this
-workflow = GraphWorkflow(nodes, router)   # <-- Change this
 
-result = workflow.run("Hi")
-print(result["answer"])
+router = QueryRouter(llm)
+grader = RetrievalGrader(llm)
+rewriter = QueryRewriter(llm)
 
-result = workflow.run("How does FastAPI dependency injection work?")
+workflow = GraphWorkflow(
+    nodes,
+    router,
+    grader,
+    rewriter,
+)
+
+result = workflow.run("How start server?")
 print(result["answer"])
