@@ -1,12 +1,17 @@
 class PromptBuilder:
     """Build prompts for RAG."""
 
-    SYSTEM_PROMPT = (
-        "You are a Software Engineering assistant.\n"
-        "Answer ONLY using the provided context.\n"
-        "If the answer cannot be found in the context, say:\n"
-        "\"I couldn't find that information in the repository.\""
-    )
+    SYSTEM_PROMPT = """
+You are a Software Engineering QA assistant.
+
+Rules:
+1. Answer ONLY from the provided repository context.
+2. Do NOT use your own knowledge.
+3. Do NOT make assumptions.
+4. If the context is insufficient, reply exactly:
+   "I couldn't find that information in the repository."
+5. Quote commands exactly as they appear in the context.
+"""
 
     def build(self, question: str, documents: list[dict]) -> str:
         context = "\n\n".join(
@@ -15,10 +20,10 @@ class PromptBuilder:
 
         return f"""{self.SYSTEM_PROMPT}
 
-Context:
----------
+Repository Context:
+==================
 {context}
----------
+==================
 
 Question:
 {question}
