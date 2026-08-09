@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic RAG | Software Engineering QA</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #080b10;
+            --panel: #0e131a;
+            --panel-2: #111820;
+            --border: #202a35;
+            --text: #e6edf3;
+            --muted: #8b98a7;
+            --blue: #4f9cf9;
+            --green: #43d17a;
+            --orange: #f0a35b;
+        }
+
+        body {
+            margin: 0;
+            background:
+                radial-gradient(circle at 20% 0%, rgba(79,156,249,.08), transparent 30%),
+                var(--bg);
+            color: var(--text);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system,
+                         BlinkMacSystemFont, "Segoe UI", sans-serif;
+            min-height: 100vh;
+        }
+
+        .app {
+            width: min(1180px, 94%);
+            margin: auto;
+        }
+
+        /* HEADER */
+
+        header {
+            height: 72px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-mark {
+            width: 34px;
+            height: 34px;
+            border: 1px solid #31577f;
+            border-radius: 8px;
+            display: grid;
+            place-items: center;
+            color: var(--blue);
+            font-weight: 700;
+            font-size: 13px;
+            background: #0c1724;
+        }
+
+        .brand-title {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .brand-subtitle {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 8px rgba(67,209,122,.5);
+        }
+
+        /* HERO */
+
+        .hero {
+            padding: 70px 0 42px;
+        }
+
+        .eyebrow {
+            color: var(--blue);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            margin-bottom: 14px;
+        }
+
+        h1 {
+            font-size: clamp(34px, 5vw, 54px);
+            line-height: 1.05;
+            letter-spacing: -.035em;
+            margin: 0;
+            max-width: 750px;
+        }
+
+        .hero p {
+            color: var(--muted);
+            max-width: 700px;
+            line-height: 1.7;
+            margin: 18px 0 0;
+            font-size: 15px;
+        }
+
+        .stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            margin-top: 22px;
+        }
+
+        .tag {
+            border: 1px solid var(--border);
+            background: rgba(14,19,26,.8);
+            color: #aeb9c5;
+            padding: 5px 9px;
+            border-radius: 5px;
+            font-size: 11px;
+        }
+
+        /* QUERY */
+
+        .panel {
+            background: rgba(14,19,26,.92);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 18px;
+        }
+
+        .panel-header {
+            border-bottom: 1px solid var(--border);
+            padding: 13px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #c7d1dc;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+        }
+
+        .panel-meta {
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .query-area {
+            padding: 16px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 110px;
+            resize: vertical;
+            background: #090d13;
+            border: 1px solid #273340;
+            border-radius: 7px;
+            padding: 14px;
+            color: var(--text);
+            font: inherit;
+            font-size: 14px;
+            line-height: 1.6;
+            outline: none;
+        }
+
+        textarea:focus {
+            border-color: #396b9e;
+            box-shadow: 0 0 0 2px rgba(79,156,249,.08);
+        }
+
+        textarea::placeholder {
+            color: #586574;
+        }
+
+        .query-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+        }
+
+        .shortcut {
+            color: #596675;
+            font-size: 11px;
+        }
+
+        button {
+            border: 1px solid #326da8;
+            background: #173b5e;
+            color: #dceeff;
+            border-radius: 6px;
+            padding: 9px 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: .15s ease;
+        }
+
+        button:hover {
+            background: #1d4b75;
+            border-color: #4f9cf9;
+        }
+
+        button:disabled {
+            opacity: .55;
+            cursor: wait;
+        }
+
+        /* PIPELINE */
+
+        .pipeline {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            border-top: 1px solid var(--border);
+        }
+
+        .stage {
+            padding: 13px 15px;
+            border-right: 1px solid var(--border);
+        }
+
+        .stage:last-child {
+            border-right: 0;
+        }
+
+        .stage-label {
+            color: #657382;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+        }
+
+        .stage-name {
+            margin-top: 5px;
+            font-size: 12px;
+            color: #b9c5d1;
+        }
+
+        /* ANSWER */
+
+        .answer-body {
+            padding: 20px;
+        }
+
+        #answer {
+            color: #d5dde5;
+            font-size: 14px;
+            line-height: 1.75;
+            white-space: pre-wrap;
+        }
+
+        .empty {
+            color: #5f6c7a !important;
+        }
+
+        .metrics {
+            display: flex;
+            gap: 8px;
+            margin-top: 18px;
+            flex-wrap: wrap;
+        }
+
+        .metric {
+            border: 1px solid var(--border);
+            background: #0a0f15;
+            border-radius: 6px;
+            padding: 7px 10px;
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .metric strong {
+            color: #cbd5df;
+            margin-right: 4px;
+        }
+
+        /* SOURCES */
+
+        .sources {
+            padding: 14px 16px 18px;
+        }
+
+        .source {
+            border: 1px solid var(--border);
+            background: #0a0f15;
+            border-radius: 7px;
+            margin-bottom: 9px;
+            overflow: hidden;
+        }
+
+        .source-header {
+            padding: 11px 13px;
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .source-name {
+            color: #75b5fa;
+            font-size: 11px;
+            word-break: break-all;
+        }
+
+        .score {
+            color: var(--green);
+            font-size: 11px;
+            white-space: nowrap;
+        }
+
+        .source-content {
+            padding: 12px 13px;
+            color: #8996a4;
+            font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+            font-size: 11px;
+            line-height: 1.55;
+            max-height: 150px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        /* FOOTER */
+
+        footer {
+            border-top: 1px solid var(--border);
+            margin-top: 55px;
+            padding: 22px 0 35px;
+            display: flex;
+            justify-content: space-between;
+            color: #596675;
+            font-size: 11px;
+        }
+
+        /* LOADING */
+
+        .loading {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+        }
+
+        .loader {
+            width: 12px;
+            height: 12px;
+            border: 2px solid #314150;
+            border-top-color: var(--blue);
+            border-radius: 50%;
+            animation: spin .8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 700px) {
+
+            .hero {
+                padding-top: 45px;
+            }
+
+            .pipeline {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .stage:nth-child(2) {
+                border-right: 0;
+            }
+
+            .stage {
+                border-bottom: 1px solid var(--border);
+            }
+
+            .query-footer {
+                align-items: flex-start;
+                gap: 12px;
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+
+            footer {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="app">
+
+    <header>
+
+        <div class="brand">
+
+            <div class="brand-mark">
+                RAG
+            </div>
+
+            <div>
+                <div class="brand-title">
+                    Agentic RAG
+                </div>
+
+                <div class="brand-subtitle">
+                    Software Engineering QA
+                </div>
+            </div>
+
+        </div>
+
+        <div class="status">
+            <span class="status-dot"></span>
+            API Online
+        </div>
+
+    </header>
+
+
+    <main>
+
+        <section class="hero">
+
+            <div class="eyebrow">
+                Repository Intelligence
+            </div>
+
+            <h1>
+                Ask your codebase.
+            </h1>
+
+            <p>
+                Search technical documentation and source code using
+                an agentic retrieval pipeline, then generate answers
+                grounded in repository context.
+            </p>
+
+            <div class="stack">
+                <span class="tag">LangGraph</span>
+                <span class="tag">LangChain</span>
+                <span class="tag">Qdrant</span>
+                <span class="tag">Mistral 7B</span>
+                <span class="tag">FastAPI</span>
+                <span class="tag">Sentence Transformers</span>
+            </div>
+
+        </section>
+
+
+        <!-- QUERY -->
+
+        <section class="panel">
+
+            <div class="panel-header">
+
+                <span class="panel-title">
+                    Query
+                </span>
+
+                <span class="panel-meta">
+                    POST /query
+                </span>
+
+            </div>
+
+            <div class="query-area">
+
+                <textarea
+                    id="question"
+                    placeholder="Ask something about the indexed repository..."
+                ></textarea>
+
+                <div class="query-footer">
+
+                    <span class="shortcut">
+                        Ctrl + Enter to run
+                    </span>
+
+                    <button
+                        id="askButton"
+                        onclick="askQuestion()"
+                    >
+                        Run Query
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="pipeline">
+
+                <div class="stage">
+                    <div class="stage-label">01</div>
+                    <div class="stage-name">Query</div>
+                </div>
+
+                <div class="stage">
+                    <div class="stage-label">02</div>
+                    <div class="stage-name">Retrieve</div>
+                </div>
+
+                <div class="stage">
+                    <div class="stage-label">03</div>
+                    <div class="stage-name">Evaluate</div>
+                </div>
+
+                <div class="stage">
+                    <div class="stage-label">04</div>
+                    <div class="stage-name">Generate</div>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ANSWER -->
+
+        <section class="panel">
+
+            <div class="panel-header">
+
+                <span class="panel-title">
+                    Answer
+                </span>
+
+                <span
+                    class="panel-meta"
+                    id="answerStatus"
+                >
+                    Waiting for query
+                </span>
+
+            </div>
+
+            <div class="answer-body">
+
+                <div
+                    id="answer"
+                    class="empty"
+                >
+                    Run a query to generate an answer from repository context.
+                </div>
+
+                <div
+                    id="metrics"
+                    class="metrics"
+                    style="display:none;"
+                >
+
+                    <div class="metric">
+                        <strong id="latency">—</strong>
+                        latency
+                    </div>
+
+                    <div class="metric">
+                        <strong id="sourceCount">—</strong>
+                        sources
+                    </div>
+
+                    <div class="metric">
+                        <strong id="topScore">—</strong>
+                        top score
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- SOURCES -->
+
+        <section class="panel">
+
+            <div class="panel-header">
+
+                <span class="panel-title">
+                    Retrieved Context
+                </span>
+
+                <span
+                    class="panel-meta"
+                    id="sourceStatus"
+                >
+                    No sources
+                </span>
+
+            </div>
+
+            <div
+                id="sources"
+                class="sources"
+            >
+
+                <div class="empty">
+                    Retrieved repository documents will appear here.
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <footer>
+
+        <span>
+            Agentic RAG for Software Engineering QA
+        </span>
+
+        <span>
+            Retrieval-grounded generation
+        </span>
+
+    </footer>
+
+</div>
+
+
+<script>
+
+async function askQuestion() {
+
+    const input =
+        document.getElementById("question");
+
+    const button =
+        document.getElementById("askButton");
+
+    const answer =
+        document.getElementById("answer");
+
+    const sources =
+        document.getElementById("sources");
+
+    const metrics =
+        document.getElementById("metrics");
+
+    const answerStatus =
+        document.getElementById("answerStatus");
+
+    const sourceStatus =
+        document.getElementById("sourceStatus");
+
+
+    const question =
+        input.value.trim();
+
+
+    if (!question) {
+
+        answer.textContent =
+            "Please enter a question.";
+
+        answer.className = "empty";
+
+        return;
+    }
+
+
+    button.disabled = true;
+
+    button.innerHTML =
+        '<span class="loading">' +
+        '<span class="loader"></span>' +
+        'Running' +
+        '</span>';
+
+
+    answer.className = "";
+
+    answer.innerHTML =
+        '<span class="loading">' +
+        '<span class="loader"></span>' +
+        'Retrieving repository context...' +
+        '</span>';
+
+
+    sources.innerHTML = "";
+
+    metrics.style.display = "none";
+
+    answerStatus.textContent =
+        "Processing";
+
+    sourceStatus.textContent =
+        "Retrieving";
+
+
+    const start =
+        performance.now();
+
+
+    try {
+
+        const response =
+            await fetch(
+                "http://127.0.0.1:8000/query",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        question: question
+                    })
+                }
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "API returned HTTP " +
+                response.status
+            );
+        }
+
+
+        const data =
+            await response.json();
+
+
+        const elapsed =
+            performance.now() - start;
+
+
+        answer.textContent =
+            data.answer ||
+            "No answer returned.";
+
+        answer.className = "";
+
+
+        const documents =
+            data.documents || [];
+
+
+        metrics.style.display = "flex";
+
+
+        document.getElementById("latency")
+            .textContent =
+            Math.round(elapsed) + " ms";
+
+
+        document.getElementById("sourceCount")
+            .textContent =
+            documents.length;
+
+
+        const topScore =
+            documents.length > 0 &&
+            documents[0].score !== undefined
+                ? Number(documents[0].score).toFixed(3)
+                : "—";
+
+
+        document.getElementById("topScore")
+            .textContent =
+            topScore;
+
+
+        answerStatus.textContent =
+            "Completed";
+
+
+        sourceStatus.textContent =
+            documents.length +
+            " documents";
+
+
+        if (documents.length === 0) {
+
+            sources.innerHTML =
+                '<div class="empty">' +
+                'No repository context returned.' +
+                '</div>';
+
+        } else {
+
+            documents.forEach((doc, index) => {
+
+                const metadata =
+                    doc.metadata || {};
+
+                const source =
+                    metadata.source ||
+                    "Unknown source";
+
+                const score =
+                    doc.score !== undefined
+                        ? Number(doc.score).toFixed(3)
+                        : "—";
+
+
+                const wrapper =
+                    document.createElement("div");
+
+                wrapper.className =
+                    "source";
+
+
+                wrapper.innerHTML = `
+                    <div class="source-header">
+
+                        <div class="source-name">
+                            ${escapeHtml(source)}
+                        </div>
+
+                        <div class="score">
+                            ${score}
+                        </div>
+
+                    </div>
+
+                    <div class="source-content">
+                        ${escapeHtml(doc.content || "")}
+                    </div>
+                `;
+
+
+                sources.appendChild(wrapper);
+
+            });
+
+        }
+
+    } catch (error) {
+
+        answer.className = "";
+
+        answer.textContent =
+            "Unable to connect to the RAG API.\n\n" +
+            error.message;
+
+
+        answerStatus.textContent =
+            "Request failed";
+
+
+        sourceStatus.textContent =
+            "Unavailable";
+
+
+        metrics.style.display =
+            "none";
+
+    } finally {
+
+        button.disabled = false;
+
+        button.textContent =
+            "Run Query";
+
+    }
+
+}
+
+
+function escapeHtml(text) {
+
+    const element =
+        document.createElement("div");
+
+    element.textContent =
+        text;
+
+    return element.innerHTML;
+
+}
+
+
+document
+    .getElementById("question")
+    .addEventListener(
+        "keydown",
+        function(event) {
+
+            if (
+                event.key === "Enter" &&
+                event.ctrlKey
+            ) {
+                askQuestion();
+            }
+
+        }
+    );
+
+</script>
+
+</body>
+</html>

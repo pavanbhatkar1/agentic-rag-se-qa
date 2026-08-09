@@ -1,0 +1,22 @@
+[
+  {
+    "question": "How do I start a FastAPI server?",
+    "ground_truth": "Use the FastAPI CLI or an ASGI server such as Uvicorn to run the application."
+  },
+  {
+    "question": "What is APIRouter used for?",
+    "ground_truth": "APIRouter is used to organize and declare path operations in FastAPI applications."
+  },
+  {
+    "question": "What is dependency injection in FastAPI?",
+    "ground_truth": "FastAPI uses dependencies to provide reusable logic and values to path operation functions."
+  },
+  {
+    "question": "What is Qdrant?",
+    "ground_truth": "Qdrant is a vector database used for similarity search over embeddings."
+  },
+  {
+    "question": "What is LangGraph used for?",
+    "ground_truth": "LangGraph is used to build stateful workflows and orchestrate LLM application steps."
+  }
+]

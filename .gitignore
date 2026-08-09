@@ -38,3 +38,8 @@ data/qdrant/
 
 # Misc
 .cache/
+
+
+
+.evalenv/
+data/benchmark_results.json
