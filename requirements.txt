@@ -33,3 +33,4 @@ tqdm
 pytest
 
 python-multipart
+langchain-ollama
