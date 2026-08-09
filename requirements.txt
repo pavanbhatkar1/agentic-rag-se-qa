@@ -9,7 +9,8 @@ qdrant-client
 sentence-transformers
 rank-bm25
 transformers
-torch
+sentence-transformers
+transformers
 
 ollama
 

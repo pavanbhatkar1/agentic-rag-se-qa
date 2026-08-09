@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     qdrant_port: int = 6333
     qdrant_collection: str = "software_docs"
     qdrant_url: str = "http://localhost:6333"
+    qdrant_api_key: str = ""
 
     ollama_base_url: str = "http://localhost:11434"
     llm_model: str = "mistral"
