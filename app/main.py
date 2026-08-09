@@ -1,12 +1,15 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
 from app.api.routes import router
 from app.core.config import settings
 from app.core.logging import logger, setup_logging
 from app.core.qdrant import client
+
 
 setup_logging()
 
@@ -25,6 +28,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -32,6 +36,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 app.include_router(router)
 
@@ -44,6 +49,13 @@ async def health():
         "environment": settings.app_env,
         "version": "1.0.0",
     }
+
+
+@app.get("/app", include_in_schema=False)
+async def frontend():
+    return FileResponse(
+        Path(__file__).resolve().parent.parent / "frontend" / "index.html"
+    )
 
 
 @app.get("/", tags=["Root"])
