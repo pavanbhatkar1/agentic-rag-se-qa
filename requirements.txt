@@ -23,6 +23,8 @@ pydantic-settings
 python-dotenv
 
 gitpython
+streamlit
+requests
 
 ragas
 datasets
@@ -35,3 +37,5 @@ pytest
 
 python-multipart
 langchain-ollama
+mistral
+tavily-python

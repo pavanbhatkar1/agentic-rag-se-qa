@@ -9,9 +9,9 @@ class Settings(BaseSettings):
 
     host: str = "0.0.0.0"
     port: int = 8000
-
     qdrant_host: str = "localhost"
     qdrant_port: int = 6333
+
     qdrant_collection: str = "software_docs"
     qdrant_url: str = "http://localhost:6333"
     qdrant_api_key: str = ""
@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     ollama_base_url: str = "http://localhost:11434"
     llm_model: str = "mistral"
     ollama_model: str = "mistral:7b"
+    tavily_api_key: str = "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"
+
 
     embedding_model: str = "BAAI/bge-small-en-v1.5"
     rerank_model: str = "BAAI/bge-reranker-base"

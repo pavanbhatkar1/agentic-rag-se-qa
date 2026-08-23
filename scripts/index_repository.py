@@ -30,7 +30,6 @@ def main():
     # Parse + Chunk
     document_loader = DocumentLoader()
     documents = document_loader.load(files)
-    documents = documents[:3000]
 
     print(f"Created {len(documents)} chunks")
 

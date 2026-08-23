@@ -3,6 +3,6 @@ from qdrant_client import QdrantClient
 from app.core.config import settings
 
 client = QdrantClient(
-    host=settings.qdrant_host,
-    port=settings.qdrant_port,
+    url=settings.qdrant_url,
+    api_key=settings.qdrant_api_key or None,
 )

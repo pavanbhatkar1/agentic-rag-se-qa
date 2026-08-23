@@ -1,5 +1,7 @@
 from langchain_ollama import ChatOllama
 
+from app.core.config import settings
+
 
 class OllamaClient:
     """Simple wrapper around Ollama."""
@@ -12,6 +14,7 @@ class OllamaClient:
         self.llm = ChatOllama(
             model=model,
             temperature=temperature,
+            base_url=settings.ollama_base_url,
         )
 
     def generate(self, prompt: str) -> str:

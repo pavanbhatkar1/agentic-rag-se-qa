@@ -9,7 +9,7 @@ RUN pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu 
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
-COPY frontend ./frontend
+
 
 EXPOSE 10000
 
