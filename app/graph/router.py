@@ -32,6 +32,36 @@ class QueryRouter:
         "qdrant",
         "langgraph",
         "ollama",
+        "retriever",
+        "reranker",
+        "query router",
+        "queryrouter",
+        "rag pipeline",
+        "workflow",
+    )
+
+    PROJECT_CONTEXT_SIGNALS = (
+        "this project",
+        "this repository",
+        "this repo",
+        "our project",
+        "our code",
+        "our codebase",
+        "in the project",
+        "in this codebase",
+        "in this repository",
+    )
+
+    COMPLEX_SIGNALS = (
+        "architecture",
+        "workflow",
+        "pipeline",
+        "end-to-end",
+        "trace",
+        "how do these components",
+        "how do the components",
+        "how does .* connect",
+        "compare",
     )
 
     def __init__(self, llm: OllamaClient):
@@ -41,11 +71,23 @@ class QueryRouter:
         question = state["question"].strip()
         question_lower = question.lower()
 
-        # Obvious general-knowledge questions do not need repository retrieval.
-        if not any(
+        has_project_context = any(
+            signal in question_lower
+            for signal in self.PROJECT_CONTEXT_SIGNALS
+        )
+        has_repository_signal = any(
             signal in question_lower
             for signal in self.REPOSITORY_SIGNALS
-        ):
+        )
+
+        # Explicit project/repository questions must use local evidence.
+        if has_project_context:
+            if any(signal in question_lower for signal in self.COMPLEX_SIGNALS):
+                return "complex"
+            return "retrieve"
+
+        # General-knowledge questions do not need repository retrieval.
+        if not has_repository_signal:
             return "direct"
 
         prompt = f"""
@@ -68,7 +110,6 @@ multiple components, understanding an internal workflow, comparing
 implementations, or connecting several pieces of source code.
 
 Return ONLY one label:
-
 DIRECT
 RETRIEVE
 COMPLEX
