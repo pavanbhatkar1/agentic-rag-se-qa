@@ -57,10 +57,37 @@ function makePromptId(question: string): string {
 }
 
 function toParagraphs(answer: string): string[] {
+  const seen = new Set<string>();
+
   return answer
     .split(/\n{2,}/)
     .map((part) => part.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .filter((part) => {
+      const key = part.replace(/\s+/g, " ").toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function splitHeadline(paragraphs: string[]): { headline: string; body: string[] } {
+  if (paragraphs.length === 0) {
+    return { headline: "Agent response", body: [] };
+  }
+
+  const first = paragraphs[0];
+  const sentenceMatch = first.match(/^(.{25,140}?[.!?])(?:\s|$)/);
+
+  if (!sentenceMatch) {
+    return { headline: "Repository-grounded answer", body: paragraphs };
+  }
+
+  const headline = sentenceMatch[1].replace(/^#+\s*/, "").trim();
+  const remainder = first.slice(sentenceMatch[0].length).trim();
+  const body = remainder ? [remainder, ...paragraphs.slice(1)] : paragraphs.slice(1);
+
+  return { headline, body };
 }
 
 function routeConfidence(route: RouteDecision, question: string): number {
@@ -115,6 +142,7 @@ export async function runPipeline(rawQuestion: string): Promise<PipelineResult> 
 
   const answerText = payload.answer?.trim() || "The backend returned no answer.";
   const paragraphs = toParagraphs(answerText);
+  const { headline, body } = splitHeadline(paragraphs);
 
   return {
     route,
@@ -126,8 +154,8 @@ export async function runPipeline(rawQuestion: string): Promise<PipelineResult> 
     webDocuments: payload.web_documents ?? [],
     rewrittenQuery: payload.rewritten_query || undefined,
     answer: {
-      headline: paragraphs[0] || "Agent response",
-      paragraphs: paragraphs.length > 1 ? paragraphs.slice(1) : [answerText],
+      headline,
+      paragraphs: body.length > 0 ? body : paragraphs,
     },
     promptId: makePromptId(question),
     latencyMs: payload.latency_ms ?? 0,
