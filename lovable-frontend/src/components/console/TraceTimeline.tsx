@@ -54,6 +54,10 @@ function truncate(text: string, max = 42): string {
   return text.length > max ? `${text.slice(0, max).trimEnd()}...` : text;
 }
 
+function displaySource(source: string): string {
+  return source.replace(/\\/g, "/").replace(/^.*?data\/raw\/repos\//, "");
+}
+
 interface TraceTimelineProps {
   status: RunStatus;
   result: PipelineResult | null;
@@ -75,9 +79,7 @@ export function TraceTimeline({ status, result, question, visibleSteps }: TraceT
 
     nodes.push(
       <TraceNode key="query" n={next()} title="User Query Received">
-        <div className="font-mono text-[11px] italic text-foreground-subtle">
-          &ldquo;{truncate(question)}&rdquo;
-        </div>
+        <div className="font-mono text-[11px] italic text-foreground-subtle">&ldquo;{truncate(question)}&rdquo;</div>
       </TraceNode>,
     );
 
@@ -109,31 +111,42 @@ export function TraceTimeline({ status, result, question, visibleSteps }: TraceT
           <div className="mt-1 space-y-2">
             {result.documents.length > 0 ? (
               <>
-                <div className="flex flex-wrap gap-1.5">
-                  {result.documents.map((doc) => (
-                    <span
-                      key={doc.metadata.source}
-                      className="rounded border border-edge bg-raised px-1.5 py-0.5 font-mono text-[9px] text-foreground-subtle"
+                <div className="space-y-1.5">
+                  {result.documents.map((doc, index) => (
+                    <div
+                      key={`${doc.metadata.source}-${index}`}
+                      className="rounded border border-edge bg-raised px-2 py-1.5"
                     >
-                      {doc.metadata.source}
-                    </span>
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="min-w-0 truncate font-mono text-[9px] text-foreground-subtle" title={doc.metadata.source}>
+                          {displaySource(doc.metadata.source)}
+                        </span>
+                        <span className="shrink-0 font-mono text-[9px] text-accent">
+                          {doc.score !== undefined ? doc.score.toFixed(3) : "—"}
+                        </span>
+                      </div>
+                      {doc.metadata.repository ? (
+                        <div className="mt-0.5 text-[8px] uppercase tracking-wider text-foreground-faint">
+                          {doc.metadata.repository}
+                        </div>
+                      ) : null}
+                    </div>
                   ))}
                 </div>
                 {topDoc ? (
                   <div className="rounded border border-border-strong/50 bg-card/50 p-2 text-[10px] text-foreground-subtle">
-                    <div className="mb-1 text-foreground">Top Context:</div>
-                    <p className="leading-relaxed">&ldquo;{truncate(topDoc.content, 90)}&rdquo;</p>
+                    <div className="mb-1 text-foreground">Top Context</div>
+                    <p className="leading-relaxed">&ldquo;{truncate(topDoc.content, 120)}&rdquo;</p>
                   </div>
                 ) : null}
                 <Collapsible label="View retrieved context">
                   <div className="space-y-2">
                     {result.documents.map((doc, index) => (
-                      <div key={doc.metadata.source}>
+                      <div key={`${doc.metadata.source}-context-${index}`}>
                         <div className="mb-0.5 font-mono text-[9px] text-foreground-faint">
-                          Document {index + 1}
-                          {doc.metadata.file_type ? ` · ${doc.metadata.file_type}` : ""}
+                          Document {index + 1} · {displaySource(doc.metadata.source)}
                         </div>
-                        <pre className="overflow-x-auto whitespace-pre-wrap rounded border border-border-strong/50 bg-background/60 p-2 font-mono text-[10px] leading-relaxed text-foreground-subtle">
+                        <pre className="max-h-56 overflow-auto whitespace-pre-wrap rounded border border-border-strong/50 bg-background/60 p-2 font-mono text-[10px] leading-relaxed text-foreground-subtle">
                           {doc.content}
                         </pre>
                       </div>
@@ -156,7 +169,7 @@ export function TraceTimeline({ status, result, question, visibleSteps }: TraceT
             <div className="h-1 flex-1 overflow-hidden rounded-full bg-raised">
               <div
                 className={`h-full ${strong ? "bg-accent" : "bg-warning"}`}
-                style={{ width: `${Math.round(score * 100)}%` }}
+                style={{ width: `${Math.min(100, Math.round(score * 100))}%` }}
               />
             </div>
             <span className="font-mono text-[10px] text-foreground-subtle">{score.toFixed(2)}</span>
@@ -170,9 +183,7 @@ export function TraceTimeline({ status, result, question, visibleSteps }: TraceT
       if (result.retryCount > 0) {
         nodes.push(
           <TraceNode key="rewrite" n={next()} title="Query Rewrite / Retry">
-            <div className="mt-1 text-[10px] text-warning">
-              {result.retryCount} retrieval retry(s) performed.
-            </div>
+            <div className="mt-1 text-[10px] text-warning">{result.retryCount} retrieval retry(s) performed.</div>
             {result.rewrittenQuery ? (
               <div className="mt-2">
                 <Collapsible label="View rewritten query">
@@ -206,29 +217,16 @@ export function TraceTimeline({ status, result, question, visibleSteps }: TraceT
       if (result.webSearchUsed) {
         nodes.push(
           <TraceNode key="web" n={next()} title="Web Search">
-            <div className="mt-1 text-[10px] text-accent">
-              Triggered — {result.webDocuments.length} result(s).
-            </div>
+            <div className="mt-1 text-[10px] text-accent">Triggered — {result.webDocuments.length} result(s).</div>
             {result.webDocuments.length > 0 ? (
               <div className="mt-2">
                 <Collapsible label="View web sources">
                   <div className="space-y-2">
                     {result.webDocuments.map((doc, index) => (
-                      <div
-                        key={doc.title}
-                        className="rounded border border-border-strong/50 bg-card/50 p-2"
-                      >
-                        <div className="text-[10px] font-medium text-foreground">
-                          {index + 1}. {doc.title}
-                        </div>
-                        {doc.url ? (
-                          <div className="mt-0.5 truncate font-mono text-[9px] text-foreground-faint">
-                            {doc.url}
-                          </div>
-                        ) : null}
-                        <p className="mt-1 text-[10px] leading-relaxed text-foreground-subtle">
-                          {doc.content}
-                        </p>
+                      <div key={doc.title} className="rounded border border-border-strong/50 bg-card/50 p-2">
+                        <div className="text-[10px] font-medium text-foreground">{index + 1}. {doc.title}</div>
+                        {doc.url ? <div className="mt-0.5 truncate font-mono text-[9px] text-foreground-faint">{doc.url}</div> : null}
+                        <p className="mt-1 text-[10px] leading-relaxed text-foreground-subtle">{doc.content}</p>
                       </div>
                     ))}
                   </div>
@@ -240,27 +238,21 @@ export function TraceTimeline({ status, result, question, visibleSteps }: TraceT
       } else {
         nodes.push(
           <TraceNode key="web" n={next()} title="Web Search">
-            <div className="mt-1 text-[10px] text-foreground-faint">
-              BYPASSED - LOCAL CONTEXT SUFFICIENT
-            </div>
+            <div className="mt-1 text-[10px] text-foreground-faint">BYPASSED - LOCAL CONTEXT SUFFICIENT</div>
           </TraceNode>,
         );
       }
     } else {
       nodes.push(
         <TraceNode key="skipped" n={next()} title="Retrieval Pipeline" dimmed>
-          <div className="font-mono text-[10px] italic">
-            SKIPPED — router selected the DIRECT path.
-          </div>
+          <div className="font-mono text-[10px] italic">SKIPPED — router selected the DIRECT path.</div>
         </TraceNode>,
       );
     }
 
     nodes.push(
       <TraceNode key="generation" n={next()} title="Final Generation" active>
-        <div className="text-[10px] text-foreground-subtle">
-          Mistral-7B / Tokens: {result.tokens} / Temp: 0.1
-        </div>
+        <div className="text-[10px] text-foreground-subtle">Mistral-7B / Tokens: {result.tokens} / Temp: 0.1</div>
       </TraceNode>,
     );
   }
@@ -284,15 +276,9 @@ export function TraceTimeline({ status, result, question, visibleSteps }: TraceT
   return (
     <div className="shrink-0 border-t border-border bg-card/20 p-6 xl:w-[420px] xl:overflow-y-auto xl:border-l xl:border-t-0">
       <div className="mb-8 flex items-center justify-between">
-        <h3 className="text-xs font-medium uppercase tracking-[0.1em] text-foreground-subtle">
-          Trace Timeline
-        </h3>
+        <h3 className="text-xs font-medium uppercase tracking-[0.1em] text-foreground-subtle">Trace Timeline</h3>
         {result ? (
-          <button
-            type="button"
-            onClick={() => setShowJson((value) => !value)}
-            className="font-mono text-[10px] text-foreground-faint transition-colors hover:text-foreground-subtle"
-          >
+          <button type="button" onClick={() => setShowJson((value) => !value)} className="font-mono text-[10px] text-foreground-faint transition-colors hover:text-foreground-subtle">
             {showJson ? "HIDE JSON" : "VIEW JSON"}
           </button>
         ) : null}
@@ -301,9 +287,7 @@ export function TraceTimeline({ status, result, question, visibleSteps }: TraceT
       {!result ? (
         <div className="flex flex-col items-center gap-3 py-16 text-center">
           <div className="size-1.5 rounded-full bg-edge" />
-          <p className="max-w-[28ch] text-[11px] leading-relaxed text-foreground-faint">
-            Run a query to populate the execution trace step by step.
-          </p>
+          <p className="max-w-[28ch] text-[11px] leading-relaxed text-foreground-faint">Run a query to populate the execution trace step by step.</p>
         </div>
       ) : (
         <>
@@ -321,18 +305,12 @@ export function TraceTimeline({ status, result, question, visibleSteps }: TraceT
           </div>
 
           <div className="mt-12 border-t border-border-strong pt-6">
-            <button
-              type="button"
-              onClick={() => setShowJson((value) => !value)}
-              className="flex w-full cursor-pointer items-center justify-between font-mono text-[10px] uppercase tracking-widest text-foreground-subtle transition-colors hover:text-foreground"
-            >
+            <button type="button" onClick={() => setShowJson((value) => !value)} className="flex w-full cursor-pointer items-center justify-between font-mono text-[10px] uppercase tracking-widest text-foreground-subtle transition-colors hover:text-foreground">
               <span>Raw Data Objects</span>
               <span className={`transition-transform ${showJson ? "rotate-180" : ""}`}>↓</span>
             </button>
             {showJson ? (
-              <pre className="mt-4 animate-fade-in overflow-x-auto rounded bg-background/60 p-4 font-mono text-[10px] leading-relaxed text-foreground-faint">
-                {developerDetails}
-              </pre>
+              <pre className="mt-4 animate-fade-in overflow-x-auto rounded bg-background/60 p-4 font-mono text-[10px] leading-relaxed text-foreground-faint">{developerDetails}</pre>
             ) : null}
           </div>
         </>
