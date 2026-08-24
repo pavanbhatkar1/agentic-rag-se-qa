@@ -4,15 +4,95 @@ import type { PipelineResult } from "@/lib/agent";
 export type RunStatus = "idle" | "running" | "done";
 
 function renderInline(text: string): ReactNode[] {
-  return text.split(/(\*\*[^*]+\*\*)/g).map((part, index) =>
-    part.startsWith("**") ? (
-      <strong key={index} className="font-semibold text-foreground-strong">
-        {part.slice(2, -2)}
-      </strong>
-    ) : (
-      <span key={index}>{part}</span>
-    ),
-  );
+  return text.split(/(`[^`]+`|\*\*[^*]+\*\*)/g).map((part, index) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return (
+        <strong key={index} className="font-semibold text-foreground-strong">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+
+    if (part.startsWith("`") && part.endsWith("`")) {
+      return (
+        <code
+          key={index}
+          className="rounded border border-border-strong bg-card px-1.5 py-0.5 font-mono text-[0.9em] text-accent"
+        >
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+
+    return <span key={index}>{part}</span>;
+  });
+}
+
+function renderMarkdown(text: string): ReactNode[] {
+  const lines = text.replace(/\r\n/g, "\n").split("\n");
+  const blocks: ReactNode[] = [];
+  let paragraph: string[] = [];
+  let codeLines: string[] = [];
+  let codeLanguage = "";
+  let inCode = false;
+
+  const flushParagraph = () => {
+    const content = paragraph.join(" ").trim();
+    if (content) {
+      blocks.push(
+        <p key={`p-${blocks.length}`} className="text-pretty">
+          {renderInline(content)}
+        </p>,
+      );
+    }
+    paragraph = [];
+  };
+
+  const flushCode = () => {
+    blocks.push(
+      <pre
+        key={`code-${blocks.length}`}
+        className="overflow-x-auto rounded-lg border border-border-strong bg-card px-4 py-3 font-mono text-[13px] leading-6 text-foreground"
+      >
+        <code data-language={codeLanguage || undefined}>{codeLines.join("\n")}</code>
+      </pre>,
+    );
+    codeLines = [];
+    codeLanguage = "";
+  };
+
+  lines.forEach((line) => {
+    const fence = line.match(/^\s*```(\w+)?\s*$/);
+
+    if (fence) {
+      if (inCode) {
+        flushCode();
+        inCode = false;
+      } else {
+        flushParagraph();
+        inCode = true;
+        codeLanguage = fence[1] || "";
+      }
+      return;
+    }
+
+    if (inCode) {
+      codeLines.push(line);
+      return;
+    }
+
+    if (!line.trim()) {
+      flushParagraph();
+      return;
+    }
+
+    paragraph.push(line.trim());
+  });
+
+  if (inCode) flushCode();
+  flushParagraph();
+
+  return blocks;
 }
 
 function Metric({ label, value, tone }: { label: string; value: string; tone?: "accent" | "faint" | undefined }) {
@@ -116,16 +196,16 @@ export function AnswerPanel({ status, result, onPickExample }: AnswerPanelProps)
 
         <div className="space-y-4 text-[15px] leading-7 text-foreground">
           {answer.paragraphs.map((paragraph, index) => (
-            <p key={index} className="text-pretty">
-              {renderInline(paragraph)}
-            </p>
+            <div key={index} className="space-y-3 text-pretty">
+              {renderMarkdown(paragraph)}
+            </div>
           ))}
           {answer.bullets ? (
             <ul className="space-y-3 border-l border-border-strong pl-5 pt-2">
               {answer.bullets.map((bullet) => (
                 <li key={bullet.title} className="text-sm leading-6">
                   <span className="mb-1 block font-medium text-foreground-strong">{bullet.title}</span>
-                  {renderInline(bullet.body)}
+                  {renderMarkdown(bullet.body)}
                 </li>
               ))}
             </ul>
