@@ -1,3 +1,5 @@
+import time
+
 from fastapi import APIRouter
 
 from app.core.config import settings
@@ -74,14 +76,25 @@ def get_pipeline() -> RAGPipeline:
 
 @router.post("/query")
 def query(request: dict):
-    rag_pipeline = get_pipeline()
+    """Run the Agentic RAG pipeline and return the full UI trace payload."""
 
-    result = rag_pipeline.run(request["question"])
+    question = request.get("question", "").strip()
+    if not question:
+        return {"detail": "question is required"}
+
+    started = time.perf_counter()
+    result = get_pipeline().run(question)
+    latency_ms = round((time.perf_counter() - started) * 1000, 2)
 
     return {
         "answer": result["answer"],
         "route": result["route"],
+        "documents": result["documents"],
         "retrieval_score": result["retrieval_score"],
-        "web_search_used": result["web_search_used"],
+        "needs_retry": result["needs_retry"],
         "retry_count": result["retry_count"],
+        "rewritten_query": result["rewritten_query"],
+        "web_search_used": result["web_search_used"],
+        "web_documents": result["web_documents"],
+        "latency_ms": latency_ms,
     }
