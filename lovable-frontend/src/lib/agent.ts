@@ -31,7 +31,7 @@ export type RouteDecision = "direct" | "retrieve" | "complex";
 
 export interface PipelineResult {
   route: RouteDecision;
-  routeConfidence?: number;
+  routeConfidence: number;
   retrievalScore: number;
   retryCount: number;
   webSearchUsed: boolean;
@@ -61,6 +61,22 @@ function toParagraphs(answer: string): string[] {
     .split(/\n{2,}/)
     .map((part) => part.trim())
     .filter(Boolean);
+}
+
+function routeConfidence(route: RouteDecision, question: string): number {
+  const lower = question.toLowerCase();
+  const explicitProjectContext = [
+    "this project",
+    "this repository",
+    "this repo",
+    "our project",
+    "our codebase",
+  ].some((signal) => lower.includes(signal));
+
+  if (explicitProjectContext) return 0.95;
+  if (route === "complex") return 0.9;
+  if (route === "retrieve") return 0.85;
+  return 0.9;
 }
 
 export async function runPipeline(rawQuestion: string): Promise<PipelineResult> {
@@ -102,6 +118,7 @@ export async function runPipeline(rawQuestion: string): Promise<PipelineResult> 
 
   return {
     route,
+    routeConfidence: routeConfidence(route, question),
     retrievalScore: payload.retrieval_score ?? 0,
     retryCount: payload.retry_count ?? 0,
     webSearchUsed: Boolean(payload.web_search_used),
