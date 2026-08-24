@@ -1,6 +1,8 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from app.api.routes import router
 from app.core.config import settings
@@ -42,3 +44,12 @@ async def root():
     return {
         "message": f"Welcome to {settings.app_name}"
     }
+
+
+frontend_dir = Path("frontend")
+if (frontend_dir / "index.html").exists():
+    app.mount(
+        "/app",
+        StaticFiles(directory=frontend_dir, html=True),
+        name="frontend",
+    )
