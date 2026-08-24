@@ -9,18 +9,21 @@ IGNORED_DIRS = {
     "__pycache__",
     "venv",
     ".venv",
+    ".venv1",
+    ".evalenv",
     "node_modules",
     "build",
     "dist",
+    "data",
+    "frontend",
 }
 
 
 class FileScanner:
-    """Scan a repository for supported files."""
+    """Scan a repository for source and documentation files."""
 
     def scan(self, repo_path: str | Path) -> list[Path]:
         repo_path = Path(repo_path)
-
         files = []
 
         for file_path in repo_path.rglob("*"):
