@@ -5,6 +5,8 @@ from app.llm.ollama_client import OllamaClient
 class QueryRewriter:
     """Rewrite queries when retrieved evidence is insufficient."""
 
+    MAX_QUERY_LENGTH = 800
+
     def __init__(self, llm: OllamaClient):
         self.llm = llm
 
@@ -37,6 +39,7 @@ details, filenames, or error messages.
 
 Do not change the user's intent.
 Do not answer the question.
+Keep the rewritten query under 800 characters.
 Return ONLY the rewritten retrieval query.
 
 Rewritten query:
@@ -47,6 +50,10 @@ Rewritten query:
         # Fallback if the LLM returns an empty response.
         if not rewritten_query:
             rewritten_query = state["question"]
+
+        # Keep downstream vector/web retrieval bounded even if the model
+        # ignores the length instruction.
+        rewritten_query = " ".join(rewritten_query.split())[: self.MAX_QUERY_LENGTH].strip()
 
         return {
             **state,
