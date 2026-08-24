@@ -61,7 +61,8 @@ Answer the following question using your general knowledge.
 Question:
 {state["question"]}
 
-Give a concise and accurate answer.
+Give a concise and accurate answer in 3-6 short sentences or bullets.
+Do not restate the question and do not repeat information.
 """
 
         answer = self.llm.generate(prompt)
@@ -114,6 +115,9 @@ Web Evidence:
 {web_context}
 
 Rules:
+- Answer directly in 3-6 short sentences or bullets.
+- Do not restate the question.
+- Do not repeat the same point.
 - Prefer repository evidence when it directly answers the question.
 - Use web evidence when repository evidence is insufficient.
 - Do not invent implementation details.
