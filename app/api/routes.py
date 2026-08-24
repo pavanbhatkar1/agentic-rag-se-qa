@@ -1,6 +1,7 @@
 import time
 
 from fastapi import APIRouter
+from fastapi.responses import JSONResponse
 
 from app.core.config import settings
 from app.embeddings.embedder import Embedder
@@ -80,10 +81,25 @@ def query(request: dict):
 
     question = request.get("question", "").strip()
     if not question:
-        return {"detail": "question is required"}
+        return JSONResponse(
+            status_code=400,
+            content={"detail": "question is required"},
+        )
 
     started = time.perf_counter()
-    result = get_pipeline().run(question)
+
+    try:
+        result = get_pipeline().run(question)
+    except Exception as exc:
+        # Always return JSON so the frontend can display a useful error
+        # instead of failing while parsing FastAPI's plain-text 500 page.
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": f"Pipeline execution failed: {exc}",
+            },
+        )
+
     latency_ms = round((time.perf_counter() - started) * 1000, 2)
 
     return {
