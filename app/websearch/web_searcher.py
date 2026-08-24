@@ -6,6 +6,8 @@ from app.core.config import settings
 class WebSearcher:
     """Search the web for external information using Tavily."""
 
+    MAX_QUERY_LENGTH = 1200
+
     def __init__(self, max_results: int = 5):
         self.max_results = max_results
 
@@ -17,6 +19,14 @@ class WebSearcher:
         )
 
     def search(self, query: str) -> list[dict]:
+        # Tavily rejects queries longer than 1500 characters. LLM-generated
+        # rewrites can occasionally become verbose, so keep the external
+        # search query safely below that limit.
+        query = " ".join(query.split())[: self.MAX_QUERY_LENGTH].strip()
+
+        if not query:
+            return []
+
         response = self.client.search(
             query=query,
             search_depth="advanced",
